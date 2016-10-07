@@ -1,6 +1,10 @@
+"""
+The Remastered, QT Gui version of the famed Python Scheduler
+"""
+
 import sys
 
-#from PySide.QtCore import 
+# Unnecessary import to PySide.QtCore 
 from PySide.QtGui import QMainWindow, QApplication, QLabel, QStyleFactory
 from schedui import Ui_Schedule 
 
