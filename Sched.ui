@@ -24,7 +24,7 @@
   <property name="windowTitle">
    <string>Scheduler</string>
   </property>
-  <widget class="QTabWidget" name="tabWidget">
+  <widget class="QTabWidget" name="schedulesTab">
    <property name="geometry">
     <rect>
      <x>10</x>
@@ -40,7 +40,7 @@
     </sizepolicy>
    </property>
    <property name="currentIndex">
-    <number>0</number>
+    <number>2</number>
    </property>
    <widget class="QWidget" name="tab">
     <property name="sizePolicy">
@@ -58,7 +58,7 @@
        <x>0</x>
        <y>0</y>
        <width>851</width>
-       <height>178</height>
+       <height>531</height>
       </rect>
      </property>
      <property name="sizePolicy">
@@ -67,7 +67,7 @@
        <verstretch>0</verstretch>
       </sizepolicy>
      </property>
-     <layout class="QGridLayout" name="gridLayout" rowstretch="1,0,0,0" columnstretch="1,0,0,0">
+     <layout class="QGridLayout" name="gridLayout" rowstretch="1,0,0,10" columnstretch="1,0,0,0">
       <item row="1" column="1">
        <widget class="QTimeEdit" name="startTime">
         <property name="sizePolicy">
@@ -219,7 +219,10 @@
         </property>
        </widget>
       </item>
-      <item row="2" column="3">
+      <item row="3" column="0" colspan="4">
+       <widget class="QListWidget" name="scheduleList"/>
+      </item>
+      <item row="2" column="1">
        <widget class="QPushButton" name="addToScheduleBtn">
         <property name="sizePolicy">
          <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
@@ -232,8 +235,31 @@
         </property>
        </widget>
       </item>
-      <item row="3" column="0" colspan="4">
-       <widget class="QListWidget" name="scheduleList"/>
+      <item row="2" column="2">
+       <widget class="QPushButton" name="removeFromSchedBtn">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
+        <property name="text">
+         <string>Remove Class</string>
+        </property>
+       </widget>
+      </item>
+      <item row="2" column="3">
+       <widget class="QPushButton" name="generateBtn">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
+        <property name="text">
+         <string>Generate Schedules</string>
+        </property>
+       </widget>
       </item>
      </layout>
     </widget>
@@ -278,6 +304,29 @@
       </item>
       <item>
        <widget class="QListWidget" name="classList"/>
+      </item>
+     </layout>
+    </widget>
+   </widget>
+   <widget class="QWidget" name="tab_3">
+    <attribute name="title">
+     <string>Generated Schedules</string>
+    </attribute>
+    <widget class="QWidget" name="verticalLayoutWidget_2">
+     <property name="geometry">
+      <rect>
+       <x>0</x>
+       <y>0</y>
+       <width>851</width>
+       <height>541</height>
+      </rect>
+     </property>
+     <layout class="QVBoxLayout" name="verticalLayout">
+      <item>
+       <widget class="QComboBox" name="generatedWeeksCombo"/>
+      </item>
+      <item>
+       <widget class="QTableWidget" name="generatedTable"/>
       </item>
      </layout>
     </widget>
