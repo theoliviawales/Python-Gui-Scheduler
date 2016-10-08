@@ -5,7 +5,7 @@ The Remastered, QT Gui version of the famed Python Scheduler
 import sys
 
 # Unnecessary import to PySide.QtCore 
-from PySide.QtGui import QMainWindow, QApplication, QLabel, QStyleFactory
+from PySide.QtGui import QMainWindow, QApplication, QLabel, QStyleFactory, QTableWidgetItem
 from schedui import Ui_Schedule 
 
 class Course(object):
@@ -45,16 +45,17 @@ class Scheduler(QMainWindow, Ui_Schedule):
         self.removeFromSchedBtn.clicked.connect(self.removeFromSched)
         self.generateBtn.clicked.connect(self.generate)
         self.dayButtons = [self.mDay, self.tDay, self.wDay, self.rDay, self.fDay]
-
+        self.generatedWeeksCombo.currentIndexChanged.connect(self.displayTable)
         self.classInList = set()
         self.classInSched = set()
+        self.tables = []
 
         self.show()
 
     def removeFromSched(self):
         name = self.scheduleList.currentItem().text()
         self.scheduleList.takeItem(self.scheduleList.currentRow())
-        self.classInSche.remove(name)
+        self.classInSched.remove(name)
 
     def removeFromList(self):
         name = self.classList.currentItem().text() 
@@ -122,8 +123,28 @@ class Scheduler(QMainWindow, Ui_Schedule):
     def generate(self):
         courses = self.importClasses(list(self.classInSched))
         weeks = []
-        self.findMatches(courses, 0, [], len(self.classInSched), [], weeks)
-        self.generatedWeeksCombo.addItems(range(1, len(weeks)+1))
+        self.findMatches(courses, 0, [], len(self.classInList), [], weeks)
+        self.generatedWeeksCombo.clear()
+        self.generatedWeeksCombo.addItems([str(n) for n in range(1, len(weeks)+1)])
+        self.generatedTable.clear()
+        self.tables = weeks
+        self.displayTable()
+
+    def displayTable(self):
+        if not self.tables:
+            return
+        
+        self.generatedTable.clear()
+        table = self.tables[self.generatedWeeksCombo.currentIndex()]
+        self.generatedTable.setRowCount(len(table))
+        self.generatedTable.setColumnCount(len(table[0]))
+
+        for i in xrange(len(table)):
+            for j in xrange(len(table[i])):
+                if table[i][j]:
+                    self.generatedTable.setItem(i, j, QTableWidgetItem(str(table[i][j])))
+                    self.generatedTable.resizeRowToContents(i)
+
 
     def findMatches(self, courses, index, chosenCourses, numCourses, memo, weeks):
         if len(chosenCourses) == numCourses and chosenCourses not in memo:
