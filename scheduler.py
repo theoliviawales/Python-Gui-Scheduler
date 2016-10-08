@@ -1,5 +1,11 @@
 """
-The Remastered, QT Gui version of the famed Python Scheduler
+Richard Wales, October 2016
+
+The Remastered, QT Gui version of the famed Python Scheduler. The old code
+that ran the scheduler through the terminal has been migrated and slightly
+altered to work with a QT interface. Much of the code could be optimized for
+the fact that the GUI is now being used, but simply injecting the old code 
+base was an easy beginning step :)
 """
 
 import sys
@@ -9,18 +15,41 @@ from PySide.QtGui import QMainWindow, QApplication, QLabel, QStyleFactory, QTabl
 from schedui import Ui_Schedule 
 
 class Course(object):
+    """
+    This class holds day and time information for a course such that it can be 
+    easily compared to other courses to see if two courses conflict in times
+    """
+    
     def __init__(self, times, name):
+        """
+        Creates a new course with the given times and name
+
+        Args:
+            times: a dict containing days (key) mapping to times (values)
+            name: a str containing the course name
+        """
         self.times = times
         self.name = name
+
+        # Maybe make this a class variable?
         self.numToDay = {1:'M', 2:'T', 3:'W', 4:'R', 5:'F'}
 
     def printCourse(self):
+        """
+        Nothing to see here, just a nice debugging tool :)
+        """
         print self.name
         for day, time in self.times.items():
             print self.numToDay[day], time
         print
 
     def valid(self, otherCourse):
+        """
+        Compares date/times for two courses to see if they conflict
+
+        Args:
+            otherCourse: another course object to compare to
+        """
         if self.name == otherCourse.name:
             return False
 
@@ -36,16 +65,30 @@ class Course(object):
         return True
 
 class Scheduler(QMainWindow, Ui_Schedule):
+    """
+    Master GUI class. Inherits from a class generated from Pyside-uic that
+    contains code for the components made in QtDesigner. The button signals
+    are connected to functions to add/remove/generate items in the schedule
+    """
+
     def __init__(self):
+        """
+        Sets up the GUI and connects button signals
+        
+        Also intializes a few sets to assist in class removal from the 
+        list widgets
+        """
         super(Scheduler, self).__init__()
         self.setupUi(self)
+
         self.addToScheduleBtn.clicked.connect(self.newCourse)
         self.addClassBtn.clicked.connect(self.addClassToList)
         self.removeBtn.clicked.connect(self.removeFromList)
         self.removeFromSchedBtn.clicked.connect(self.removeFromSched)
         self.generateBtn.clicked.connect(self.generate)
-        self.dayButtons = [self.mDay, self.tDay, self.wDay, self.rDay, self.fDay]
         self.generatedWeeksCombo.currentIndexChanged.connect(self.displayTable)
+
+        self.dayButtons = [self.mDay, self.tDay, self.wDay, self.rDay, self.fDay]
         self.classInList = set()
         self.classInSched = set()
         self.tables = []
@@ -53,18 +96,36 @@ class Scheduler(QMainWindow, Ui_Schedule):
         self.show()
 
     def removeFromSched(self):
+        """
+        Removes the current item selected in the Schedule
+        list widget. Also removes it from the classInSched set
+        """
         name = self.scheduleList.currentItem().text()
         self.scheduleList.takeItem(self.scheduleList.currentRow())
         self.classInSched.remove(name)
 
     def removeFromList(self):
+        """
+        Removes the currently selected class from the class list
+        widget, as well as the set corresponding to the class list.
+        The set is used to reconstruct the new combobox items. The 
+        set was necessary as normally you would need the combobox index
+        of the removed item to actually remove it from the combobox. Clearing
+        and recreating it is simpler. A dict mapping names to indices could have
+        been used instead, and may be a better approach for larger use-cases
+        """
         name = self.classList.currentItem().text() 
         self.classList.takeItem(self.classList.currentRow())
-        self.classSelector.clear()
         self.classInList.remove(name)
+
+        self.classSelector.clear()
         self.classSelector.addItems(list(self.classInList))
 
     def addClassToList(self):
+        """
+        Adds the class name entered into the textfield into the class list
+        widget, as well as the set and combobox. 
+        """
         name = self.courseNameText.toPlainText()
         self.classList.addItem(name)
         self.classSelector.addItem(name)
@@ -72,7 +133,15 @@ class Scheduler(QMainWindow, Ui_Schedule):
         self.courseNameText.clear()
 
     def newCourse(self):
-        # self.scheduleList.insertItem(0, self.classSelector.currentText())
+        """
+        Takes the inputted course information and adds the new course to the 
+        schedule list widget, formatted in the format matching the previous
+        scheduler's so that the parsing does not need to be rewritten... yet...
+        """
+
+        # This is used sort of like a java StringBuilder so that new Strings are
+        # not constantly being allocated for, but being a dynamic array, the memory
+        # being wasted may undo the good it is doing
         courseText = []
 
         if self.classSelector.currentText() == '':
@@ -80,37 +149,51 @@ class Scheduler(QMainWindow, Ui_Schedule):
 
         courseText.append(self.classSelector.currentText())
         
+        # This bool ensures that a course is not added unless it has days specified
         noneChecked = True
         for button in self.dayButtons:
             if button.isChecked():
                 noneChecked = False
+
+                # Abuse the fact that the buttons are named with the first letter
+                # being the day they represent :)
                 day = button.objectName()[0].upper()
                 startTime = self.startTime.time()
                 endTime = self.endTime.time()
                 formatTimes = str(startTime.hour()) + ':' + str(startTime.minute()) + \
                         '-' + str(endTime.hour()) + ':' + str(endTime.minute())
                 courseText.append(day + formatTimes)
+
                 button.setCheckState(Qt.Unchecked)
 
         if noneChecked:
             return 
+
         formattedClass = ' '.join(courseText)
-        self.scheduleList.addItem(' '.join(courseText))
+        self.scheduleList.addItem(formattedClass)
         self.classInSched.add(formattedClass)
 
     def importClasses(self, classes):
         """
-        classes[]: list of strings. Course code, then days and times space separated
-        ex: COP3502 M9:30-10:20 W9:30-10:20 
+        Takes a list of formatted class strings and turns them into 'Course' objects. Because
+        the way the GUI is now done, this function could be avoided by having the Course objects
+        be created whenever 'newCourse' is called, however for now, it was easier to migrate the
+        old Terminal scheduler code to work like this, being injected into the GUI code. 
+
+        Args:
+            classes[]: list of strings. Course code, then days and times space separated
+            ex: COP3502 M9:30-10:20 W9:30-10:20
+            The format comes from the schedule list widget, done by the newCourse method 
         """
         courses = []
         weekdayDict = {'M':1, 'T':2, 'W':3, 'R':4, 'F':5}
+
         for course in classes:
             splitStr = course.split()
             name = splitStr[0]
             times = {}
 
-            for i in xrange((len(splitStr)-1)/2 + 1):
+            for i in xrange(len(splitStr)-1):
                 courseTime = splitStr[1 + i]
                 weekday = weekdayDict[courseTime[0]]
 
