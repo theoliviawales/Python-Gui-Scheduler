@@ -225,7 +225,7 @@ class Scheduler(QMainWindow, Ui_Schedule):
         Where the magic happens. importClasses turns the list widget containing the 
         classes and times into Course objects. A backtracking algorithm finds every 
         possible scheduling arrangement, and then sends the data to a table in the
-        Generated tab
+        'Generated' tab
         """
         courses = self.importClasses(list(self.classInSched))
         weeks = []
@@ -283,9 +283,12 @@ class Scheduler(QMainWindow, Ui_Schedule):
             memo.append(list(chosenCourses))
             weeks.append(self.formatTable(chosenCourses))
 
+        # If we have reached the end of our list of courses, but there are not 
+        # enough chosen courses to build a complete schedule, return 
         if index == len(courses):
             return
         
+        # Compare a candidate course to every course chosen so far to check validity
         valid = True
         for course in chosenCourses:
             if not course.valid(courses[index]):
@@ -298,19 +301,35 @@ class Scheduler(QMainWindow, Ui_Schedule):
             chosenCourses.remove(courses[index])        
 
     def formatTable(self, courses):
+        """
+        Turn a list of Course objects into a beautiful 2D list that can be easily
+        translated into a QtTableWidget for display
+
+        Args:
+            courses: A list of chosen Course objects from the backtracking algorithm
+
+        Returns:
+            A 2D list containing the formatted table information
+        """
+        
+        # Sort the times by the start so that we can greedily choose what times are
+        # placed first in the table. Greedy algorithms, hooray for CS!
         startTimes = sorted([course.times.values()[0][0] for course in courses])
+
         timeToIndex = {}
         tableList = []
 
         for i in xrange(len(courses) + 1):
             tableList.append([[], [], [], [], []])
-
+        
+        # This is the top header of the table.
         tableList[0][0] = 'Mon'
         tableList[0][1] = 'Tues'
         tableList[0][2] = 'Wed'
         tableList[0][3] = 'Thur'
         tableList[0][4] = 'Fri'
 
+        # This is the greedy part. Put the earliest times at the topmost rows
         for x in xrange(len(courses)):
             timeToIndex[startTimes[x]] = x
         
@@ -318,39 +337,13 @@ class Scheduler(QMainWindow, Ui_Schedule):
             days = course.times.keys()
             
             for day in days:
+                # Converting the times from easily comparable integer, military times, to normal 12HR times
                 courseString = course.name + '\n' + "%2d:%02d -%2d:%02d" %(course.times[day][0]/100 - \
                 12*(0 if course.times[day][0]/100 <= 12 else 1), course.times[day][0]%100, course.times[day][1]/100 - \
                 12*(0 if course.times[day][1]/100 <= 12 else 1), course.times[day][1]%100)  
                 tableList[timeToIndex[course.times[day][0]] + 1][day-1] = courseString
         
         return tableList
-        
-
-    def drawWeek(self, numClasses, courses):
-        # Initializes NxN array of empty strings
-        table = ["" for x in xrange((numClasses*2)**2)]
-        startTimes = sorted([course.times.values()[0][0] for course in courses])
-        timeToIndex = {}
-        for x in xrange(numClasses):
-            timeToIndex[startTimes[x]] = x
-
-        for course in courses:
-            days = course.times.keys()
-            for day in days:
-                listIndex = (day-1) + numClasses * timeToIndex[course.times[day][0]]*2
-                table[listIndex] = course.name
-                table[listIndex+numClasses] = "%2d:%02d -%2d:%02d" %(course.times[day][0]/100 - \
-                12*(0 if course.times[day][0]/100 <= 12 else 1), course.times[day][0]%100, course.times[day][1]/100 - \
-                12*(0 if course.times[day][1]/100 <= 12 else 1), course.times[day][1]%100) 
-        cal = """+------------------+-------------------+------------------+------------------+------------------+\n"""
-        cal += """|{:^18}| {:^18}|{:^18}|{:^18}|{:^18}|\n""".format("Mon", "Tues", "Wed", "Thur", "Fri")
-        cal += """+------------------+-------------------+------------------+------------------+------------------+\n""" + \
-    """|{:^18}| {:^18}|{:^18}|{:^18}|{:^18}|
-|{:^18}| {:^18}|{:^18}|{:^18}|{:^18}|
-+------------------+-------------------+------------------+------------------+------------------+
-
-""" * numClasses
-        return cal.format(*table)
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
