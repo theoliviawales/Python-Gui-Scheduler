@@ -49,6 +49,9 @@ class Course(object):
 
         Args:
             otherCourse: another course object to compare to
+        
+        Returns:
+            boolean of whether the classes can be placed together or not
         """
         if self.name == otherCourse.name:
             return False
@@ -184,6 +187,9 @@ class Scheduler(QMainWindow, Ui_Schedule):
             classes[]: list of strings. Course code, then days and times space separated
             ex: COP3502 M9:30-10:20 W9:30-10:20
             The format comes from the schedule list widget, done by the newCourse method 
+
+        Returns:
+            A list of Course objects that have the class information from classes
         """
         courses = []
         weekdayDict = {'M':1, 'T':2, 'W':3, 'R':4, 'F':5}
@@ -193,35 +199,61 @@ class Scheduler(QMainWindow, Ui_Schedule):
             name = splitStr[0]
             times = {}
 
+            # The (-1) accounts for the first spot being the class name in the list
             for i in xrange(len(splitStr)-1):
                 courseTime = splitStr[1 + i]
                 weekday = weekdayDict[courseTime[0]]
 
+                # Parse the time by looking for ':' to denote splitting hours and minutes
+                # as well as the '-' to split start and end times. Could using .split() have
+                # been more helpful? Hmm...
                 startTime = int(courseTime[1:courseTime.find(':')]) * 100 \
                 + int(courseTime[courseTime.find(':') + 1:courseTime.find('-')])
+
                 endTime = int(courseTime[courseTime.find('-')+1:courseTime.find(':', 5)]) * 100 + \
                 int(courseTime[courseTime.find(':', 5) + 1:])
+
                 times[weekday] = (startTime, endTime)
+
             newCourse = Course(times, name)
             courses.append(newCourse)
+        
         return courses
 
     def generate(self):
+        """
+        Where the magic happens. importClasses turns the list widget containing the 
+        classes and times into Course objects. A backtracking algorithm finds every 
+        possible scheduling arrangement, and then sends the data to a table in the
+        Generated tab
+        """
         courses = self.importClasses(list(self.classInSched))
         weeks = []
+
         self.findMatches(courses, 0, [], len(self.classInList), [], weeks)
+        
         self.generatedWeeksCombo.clear()
-        self.generatedWeeksCombo.addItems([str(n) for n in range(1, len(weeks)+1)])
         self.generatedTable.clear()
+        self.generatedWeeksCombo.addItems([str(n) for n in range(1, len(weeks)+1)])
+        
         self.tables = weeks
         self.displayTable()
 
     def displayTable(self):
+        """
+        Depending on what schedule is being viewed (as denoted by the combobox),
+        the table widget is populated with data from the tables list
+        """
         if not self.tables:
             return
         
+        # This second clear is used so that a table is cleared upon changing the
+        # combobox index, as well as if a new schedule is generated
         self.generatedTable.clear()
+
+        # The table index where the data will be fetched from the tables list
         table = self.tables[self.generatedWeeksCombo.currentIndex()]
+
         self.generatedTable.setRowCount(len(table))
         self.generatedTable.setColumnCount(len(table[0]))
 
@@ -231,8 +263,22 @@ class Scheduler(QMainWindow, Ui_Schedule):
                     self.generatedTable.setItem(i, j, QTableWidgetItem(str(table[i][j])))
                     self.generatedTable.resizeRowToContents(i)
 
-
     def findMatches(self, courses, index, chosenCourses, numCourses, memo, weeks):
+        """
+        A backtracking algorithm that builds every valid schedule possible, given the
+        courses from the courses list.
+
+        Args:
+            courses: A list of Course objects corresponding to the possible courses
+            index: The current index in courses that is to be possibly chosen
+            chosenCourses: A list of courses that have been selected to build a schedule
+            numCourses: The number of courses necessary to be added to chosenCourses
+            
+            TODO (Rwales): Change memo to a set and make Course objects comparable
+            memo: A list corresponding to the courses already seen. 
+            
+            weeks: The list that will contain all of the valid weekly schedules
+        """
         if len(chosenCourses) == numCourses and chosenCourses not in memo:
             memo.append(list(chosenCourses))
             weeks.append(self.formatTable(chosenCourses))
