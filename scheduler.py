@@ -4,7 +4,7 @@ The Remastered, QT Gui version of the famed Python Scheduler
 
 import sys
 
-# Unnecessary import to PySide.QtCore 
+from PySide.QtCore import Qt
 from PySide.QtGui import QMainWindow, QApplication, QLabel, QStyleFactory, QTableWidgetItem
 from schedui import Ui_Schedule 
 
@@ -69,6 +69,7 @@ class Scheduler(QMainWindow, Ui_Schedule):
         self.classList.addItem(name)
         self.classSelector.addItem(name)
         self.classInList.add(name)
+        self.courseNameText.clear()
 
     def newCourse(self):
         # self.scheduleList.insertItem(0, self.classSelector.currentText())
@@ -89,6 +90,8 @@ class Scheduler(QMainWindow, Ui_Schedule):
                 formatTimes = str(startTime.hour()) + ':' + str(startTime.minute()) + \
                         '-' + str(endTime.hour()) + ':' + str(endTime.minute())
                 courseText.append(day + formatTimes)
+                button.setCheckState(Qt.Unchecked)
+
         if noneChecked:
             return 
         formattedClass = ' '.join(courseText)
