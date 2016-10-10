@@ -9,7 +9,7 @@ base was an easy beginning step :)
 """
 
 import sys
-
+import qdarkstyle
 from PySide.QtCore import Qt
 from PySide.QtGui import QMainWindow, QApplication, QLabel, QStyleFactory, QTableWidgetItem
 from schedui import Ui_Schedule 
@@ -347,7 +347,7 @@ class Scheduler(QMainWindow, Ui_Schedule):
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
-    #app.setStyle(QStyleFactory.create('Plastique'))
+    app.setStyleSheet(qdarkstyle.load_stylesheet())
     s = Scheduler()
     ret = app.exec_()
     sys.exit(ret)
